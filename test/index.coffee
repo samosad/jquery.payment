@@ -50,9 +50,8 @@ describe 'jquery.payment', ->
 
       assert($.payment.validateCardNumber('6759649826438453'), 'maestro')
 
-      assert($.payment.validateCardNumber('6007220000000004'), 'forbrugsforeningen')
-
-      assert($.payment.validateCardNumber('5019717010103742'), 'dankort')
+      assert($.payment.validateCardNumber('630495060000000000'), 'laser')
+      assert($.payment.validateCardNumber('630490017740292441'), 'laser')
 
       assert($.payment.validateCardNumber('4111111111111111'), 'visa')
       assert($.payment.validateCardNumber('4012888888881881'), 'visa')
@@ -136,16 +135,6 @@ describe 'jquery.payment', ->
       topic = $.payment.validateCardExpiry currentTime.getMonth() + 1, currentTime.getFullYear() + 1
       assert.equal topic, true
 
-    it 'that is a two-digit year', ->
-      currentTime = new Date()
-      topic = $.payment.validateCardExpiry currentTime.getMonth() + 1, ('' + currentTime.getFullYear())[0...2]
-      assert.equal topic, true
-
-    it 'that is a two-digit year in the past (i.e. 1990s)', ->
-      currentTime = new Date()
-      topic = $.payment.validateCardExpiry currentTime.getMonth() + 1, 99
-      assert.equal topic, false
-
     it 'that has string numbers', ->
       currentTime = new Date()
       currentTime.setFullYear(currentTime.getFullYear() + 1, currentTime.getMonth() + 2)
@@ -227,9 +216,8 @@ describe 'jquery.payment', ->
 
       assert.equal($.payment.cardType('6759649826438453'), 'maestro')
 
-      assert.equal($.payment.cardType('6007220000000004'), 'forbrugsforeningen')
-
-      assert.equal($.payment.cardType('5019717010103742'), 'dankort')
+      assert.equal($.payment.cardType('630495060000000000'), 'laser')
+      assert.equal($.payment.cardType('630490017740292441'), 'laser')
 
       assert.equal($.payment.cardType('4111111111111111'), 'visa')
       assert.equal($.payment.cardType('4012888888881881'), 'visa')
@@ -261,62 +249,80 @@ describe 'jquery.payment', ->
       assert.equal($.payment.cardType('3566002020360505'), 'jcb')
 
   describe 'formatCardNumber', ->
-    it 'should format cc number correctly', (done) ->
+    it 'should format cc number correctly', ->
       $number = $('<input type=text>').payment('formatCardNumber')
       $number.val('4242')
 
-      e = $.Event('keypress');
+      e = $.Event('keypress')
       e.which = 52 # '4'
       $number.trigger(e)
 
-      setTimeout ->
+      assert.equal $number.val(), '4242 4'
+
+    it 'should trigger cardNumberFormatted event', (done) ->
+
+      $number = $('<input type=text>').payment('formatCardNumber')
+      $number.on 'payment.cardNumberFormatted', ->
         assert.equal $number.val(), '4242 4'
         done()
 
-    it 'should format amex cc number correctly', (done) ->
-      $number = $('<input type=text>').payment('formatCardNumber')
-      $number.val('3782')
+      $number.val('4242')
 
-      e = $.Event('keypress');
-      e.which = 56 # '8'
+      e = $.Event('keypress')
+      e.which = 52 # '4'
       $number.trigger(e)
 
-      setTimeout ->
-        assert.equal $number.val(), '3782 8'
-        done()
-
   describe 'formatCardExpiry', ->
-    it 'should format month shorthand correctly', (done) ->
+    it 'should format month shorthand correctly', ->
       $expiry = $('<input type=text>').payment('formatCardExpiry')
 
-      e = $.Event('keypress');
+      e = $.Event('keypress')
       e.which = 52 # '4'
       $expiry.trigger(e)
 
-      setTimeout ->
-        assert.equal $expiry.val(), '04 / '
-        done()
+      assert.equal $expiry.val(), '04 / '
 
-    it 'should format forward slash shorthand correctly', (done) ->
+    it 'should format forward slash shorthand correctly', ->
       $expiry = $('<input type=text>').payment('formatCardExpiry')
       $expiry.val('1')
 
-      e = $.Event('keypress');
+      e = $.Event('keypress')
       e.which = 47 # '/'
       $expiry.trigger(e)
 
-      setTimeout ->
-        assert.equal $expiry.val(), '01 / '
-        done()
+      assert.equal $expiry.val(), '01 / '
 
-    it 'should only allow numbers', (done) ->
+    it 'should only allow numbers', ->
       $expiry = $('<input type=text>').payment('formatCardExpiry')
       $expiry.val('1')
 
-      e = $.Event('keypress');
+      e = $.Event('keypress')
       e.which = 100 # 'd'
       $expiry.trigger(e)
 
-      setTimeout ->
-        assert.equal $expiry.val(), '1'
+      assert.equal $expiry.val(), '1'
+
+    it 'should trigger cardExpiryFormatted event (month)', (done) ->
+
+      $expiry = $('<input type=text>').payment('formatCardExpiry')
+
+      $expiry.on 'payment.cardExpiryFormatted', ->
+        assert.equal $expiry.val(), '04 / '
         done()
+
+      e = $.Event('keypress')
+      e.which = 52 # '4'
+      $expiry.trigger(e)
+
+    it 'should trigger cardExpiryFormatted event (slash)', (done) ->
+
+      $expiry = $('<input type=text>').payment('formatCardExpiry')
+      $expiry.val('1')
+
+      $expiry.on 'payment.cardExpiryFormatted', ->
+        assert.equal $expiry.val(), '01 / '
+        done()
+
+      e = $.Event('keypress')
+      e.which = 47 # '/'
+      $expiry.trigger(e)
